@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="deployMngDAO">
+
+	<select id="getMaxBnum" parameterType="hashmap" resultType="int">
+		SELECT NVL(B_NUM,1)+1
+		FROM (
+				SELECT MAX(B_NUM) AS B_NUM
+				FROM TB_B001
+				WHERE S_NUM = #{sNum}
+			) A
+	</select>
+	
+	<insert id="insertDeployInfo" parameterType="hashmap">
+		insert into TB_B001(S_NUM, B_NUM, DEPO_NM, APP_STATE, WAS_RESTART_YN, DEPO_VERS, DEPO_STATE, DEPO_TYPE)
+		VALUES(#{sNum},#{bNum},#{depoNm},'01',#{wasRestartYn},#{depoVers},'W0',#{depoType})
+	</insert>
+	
+	<update id="updateDeployInfo" parameterType="hashmap">
+		UPDATE TB_B001
+		SET APP_STATE = #{appState}
+			,WAS_RESTART_YN = #{wasRestartYn}
+			,DEPO_VERS = #{depoVers}
+			,DEPO_NM = #{depoNm}
+			,DEPO_TYPE = #{depoType}
+		WHERE S_NUM=#{sNum} AND B_NUM = #{bNum}
+	</update>
+	
+	<insert id="insertDeployVers" parameterType="hashmap">
+		insert into TB_B002(S_NUM, B_NUM, B_SNUM, FILE_CNT, DEV_COMMENT, DEV_ID, SVN_REG_TIME)
+		VALUES(#{sNum},#{bNum},#{bSnum},#{fileCnt},#{devComment},#{devId},#{svnRegTime})
+	</insert>
+	
+	<delete id="deleteDeployVers" parameterType="hashmap">
+		delete from TB_B002 WHERE S_NUM=#{sNum} AND B_NUM = #{bNum}
+	</delete>
+	
+	<update id="updateDeployAppState" parameterType="hashmap">
+		UPDATE TB_B001
+		SET APP_STATE = #{appState}
+		WHERE S_NUM=#{sNum} AND B_NUM = #{bNum}
+	</update>
+
+	<update id="updateDeployDepoState" parameterType="hashmap">
+		UPDATE TB_B001
+		SET DEPO_STATE = #{depoState}
+		<if test="#{depState == 'W9'.toString()}">, DEPO_TIME = TO_CHAR ( sysdate, 'YYYYMMDDHH24MI' )</if>
+		WHERE S_NUM=#{sNum} AND B_NUM = #{bNum}
+	</update>    
+	
+	<select id="selectDeployList" parameterType="hashmap" resultType="resultmap">
+		SELECT S2.*
+		FROM (
+		      SELECT ROWNUM AS rnum
+		            ,S1.*
+		      FROM ( 		
+						SELECT A.*,B.FILE_CNT, D.CAN_ROLLBACK
+						FROM TB_B001 A
+								LEFT OUTER JOIN (SELECT S_NUM, B_NUM,SUM(FILE_CNT) AS FILE_CNT
+												FROM TB_B002
+												WHERE S_NUM = #{sNum}
+												GROUP BY S_NUM,B_NUM ) B ON A.S_NUM = B.S_NUM AND A.B_NUM = B.B_NUM
+								LEFT OUTER JOIN (SELECT S_NUM, MAX(B_NUM) AS B_NUM, 'Y' AS CAN_ROLLBACK
+												FROM TB_B001
+												WHERE S_NUM = #{sNum}
+            							AND DEPO_STATE='W9'
+												GROUP BY S_NUM ) D ON A.S_NUM = D.S_NUM AND A.B_NUM = D.B_NUM  												
+						WHERE S_NUM = #{sNum}
+						ORDER BY A.B_NUM DESC												
+		      ) S1
+			  WHERE ROWNUM &lt;= #{findex} + #{ppage}
+		) S2
+		WHERE rnum &gt;= #{findex} + 1			
+	</select>
+	
+	<select id="selectDeployListCount" parameterType="hashmap" resultType="int">
+		SELECT count(*)
+		FROM TB_B001
+		WHERE S_NUM = #{sNum}
+	</select>
+
+	<select id="selectDeployInfo" parameterType="hashmap" resultType="resultmap">
+		SELECT A.*,B.FILE_CNT
+		FROM TB_B001 A
+				LEFT OUTER JOIN (SELECT S_NUM, B_NUM,SUM(FILE_CNT) AS FILE_CNT
+								FROM TB_B002
+								WHERE S_NUM = #{sNum}
+								GROUP BY S_NUM,B_NUM ) B ON A.S_NUM = B.S_NUM AND A.B_NUM = B.B_NUM
+		WHERE S_NUM = #{sNum} AND B_NUM = #{bNum}
+	</select>
+	
+	<select id="selectDeployVers" parameterType="hashmap" resultType="resultmap">
+		SELECT *
+		FROM TB_B002
+		WHERE S_NUM = #{sNum} AND B_NUM = #{bNum}
+	</select>
+	
+	<select id="selectLastBNumByRollback" parameterType="hashmap" resultType="resultmap">
+		SELECT MAX(B_NUM) AS B_NUM 
+		FROM TB_B001 
+		WHERE S_NUM = #{sNum} AND B_NUM &lt; #{bNum} AND DEPO_STATE='W9'	
+	</select>
+	
+	<update id="updateDoneRollback" parameterType="hashmap" >
+		update TB_B001
+		set ROLLBACKED_YN = 'Y'
+		where S_NUM = #{sNum} AND B_NUM  &gt;= #{bNum} AND DEPO_STATE='W9'
+	</update>
+</mapper>

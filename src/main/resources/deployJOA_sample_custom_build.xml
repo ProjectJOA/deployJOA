@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<project basedir="." name="DeployJOA_prop" default="dummy1">
+  <!-- Description 
+  	DeployJOA build property file
+  	don't add any property node, just modify values of property 
+  -->
+  <property name="java_home.dir" value="C:/sprout/Java/jdk1.7.0_79"/> <!-- java home path -->
+  <property name="webapp.dir" value="C:/sprout/apache-tomcat-7.0.67"/> <!-- was server path -->
+  <property name="webroot" value="src/main/webapp"/> <!-- source webroot path -->      
+  <property name="srcdir" value="src/main/java"/> <!-- java source path -->         
+  <property name="resources_srcdir" value="src/main/resources"/> <!-- resources source path (xml, properties files , etc -->             
+  <property name="encode_type" value="UTF-8"/> <!-- compile encoding -->
+  <property name="target" value="1.7"/> <!-- java compile version -->
+  <property name="source" value="1.7"/> <!-- java source version -->
+	
+  <target name="dummy1"/>
+	
+</project>

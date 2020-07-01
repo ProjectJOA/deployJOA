@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="targetServMngDAO">
+
+    
+    <select id="selectServerMngList" parameterType="hashmap" resultType="resultmap">
+		SELECT S2.*
+		FROM (
+		      SELECT ROWNUM AS rnum
+		            ,S1.*
+		      FROM ( 	
+						SELECT * 
+						FROM TB_S001 A
+								LEFT OUTER JOIN 
+								        (SELECT B.*
+								        		,C1.CD_VAL_KOR AS APP_STATE_NM
+								        		,C2.CD_VAL_KOR AS DEPO_STATE_NM
+								         FROM TB_B001 B
+								         	    JOIN (SELECT S_NUM, MAX(B_NUM) AS B_NUM FROM TB_B001  WHERE DEPO_STATE='W9' GROUP BY S_NUM) C ON B.S_NUM = C.S_NUM AND B.B_NUM = C.B_NUM
+								         	    LEFT OUTER JOIN TB_C001 C1 ON C1.P_CODE='01' AND B.APP_STATE = C1.CODE AND C1.DEL_YN='N'
+								         	    LEFT OUTER JOIN TB_C001 C2 ON C2.P_CODE='02' AND B.DEPO_STATE = C2.CODE AND C2.DEL_YN='N'
+								         ) D ON A.S_NUM = D.S_NUM	 
+						WHERE A.DEL_YN = 'N' 
+						<include refid="servMng_sql_condition" />
+						ORDER BY A.REG_DATE DESC												
+		      ) S1
+			  WHERE ROWNUM &lt;= #{findex} + #{ppage}
+		) S2
+		WHERE rnum &gt;= #{findex} + 1	            
+    </select>
+    
+    <select id="selectServerMngListCount" parameterType="hashmap" resultType="int">
+        <![CDATA[
+        	SELECT COUNT(*) FROM TB_S001
+			WHERE 1=1
+        ]]>    	
+        <include refid="servMng_sql_condition"/>
+    </select>
+    
+    <sql id="servMng_sql_condition">
+    	
+    </sql>
+    
+    <select id="getSeverSeq"  parameterType="hashmap" resultType="int">
+		select max(s_num)+1 as sNum
+		from tb_s001    
+    </select>
+    
+    <insert id="insertServerMngInfo" parameterType="hashmap">
+    	insert into tb_s001(s_num, sys_nm, sys_domain, sys_ip, app_use_yn, build_type, TAR_SRC_RTPATH, TAR_BLD_RTPATH,BUILD_REF_FILE_1, del_yn,SYS_ACCOUNT,SYS_ACCOUNT_PWD,DEPLOY_PATH, PROJECT_ID, PROJECT_VERSION,LAST_B_NUM) 
+    	values(#{sNum},#{sysNm},#{sysDomain},#{sysIp},#{appUseYn},#{buildType},#{tarSrcRtpath},#{tarBldRtpath},#{buildRefFile1},'N',#{sysAccount},#{sysAccountPwd},#{deployPath},#{projectId},#{projectVersion},0)  	
+    </insert>
+    
+    <insert id="insertReversionInfo" parameterType="hashmap">
+    	insert into TB_S002(S_NUM, VER_CONT_TYPE, REPOS_URL, VER_CONT_PORT, VER_CONT_USER_ID, VER_CONT_PWD, DEPO_PATH)
+    	VALUES(#{sNum},#{verContType},#{reposUrl},#{verContPort},#{verContUserId},#{verContPwd},#{depoPath})
+    </insert>
+	
+	<select id="selectServerInfo" parameterType="hashmap" resultType="resultmap">
+		select A.S_NUM
+			  ,A.SYS_NM
+		      ,A.SYS_DOMAIN
+		      ,A.SYS_IP
+		      ,A.APP_USE_YN
+		      ,A.DEL_YN
+		      ,A.BUILD_TYPE
+		      ,A.TAR_SRC_RTPATH
+		      ,A.TAR_BLD_RTPATH
+		      ,A.BUILD_REF_FILE_1
+		      ,A.SYS_ACCOUNT
+		      ,A.SYS_ACCOUNT_PWD
+		      ,A.DEPLOY_PATH
+		      ,A.PROJECT_ID
+		      ,A.PROJECT_VERSION
+		      ,A.LAST_B_NUM
+		      ,B.VER_CONT_TYPE
+		      ,B.REPOS_URL
+		      ,B.VER_CONT_PORT
+		      ,B.VER_CONT_USER_ID
+		      ,B.VER_CONT_PWD
+		      ,B.DEPO_PATH
+		      ,(SELECT DEPO_VERS FROM TB_B001 WHERE S_NUM=#{sNum} AND B_NUM=A.LAST_B_NUM) AS DEPO_VERS
+		from TB_S001 A
+				,TB_S002 B
+		WHERE A.S_NUM = B.S_NUM
+			AND A.S_NUM = #{sNum}
+	</select>
+	
+	<update id="updateServerInfo" parameterType="hashmap">
+		UPDATE tb_s001
+		SET sys_nm = #{sysNm}, sys_domain= #{sysDomain}, sys_ip= #{sysIp}, app_use_yn= #{appUseYn},build_type=#{buildType}
+			,TAR_SRC_RTPATH = #{tarSrcRtpath},TAR_BLD_RTPATH = #{tarBldRtpath}
+			<if test="buildRefFile1 != null and buildRefFile1 != ''">
+				,BUILD_REF_FILE_1=#{buildRefFile1}
+			</if>
+			,SYS_ACCOUNT = #{sysAccount} ,SYS_ACCOUNT_PWD=#{sysAccountPwd},DEPLOY_PATH=#{deployPath}
+			,PROJECT_ID = #{projectId}, PROJECT_VERSION = #{projectVersion}
+		WHERE S_NUM = #{sNum}
+	</update>
+	
+	<update id="updateProjectVersion" parameterType="hashmap">
+		UPDATE tb_s001
+		SET PROJECT_VERSION = #{projectVersion}
+		WHERE S_NUM = #{sNum}
+	</update>	
+
+	<update id="updateLastBNum" parameterType="hashmap">
+		UPDATE tb_s001
+		SET LAST_B_NUM = #{lastBNum}
+		WHERE S_NUM = #{sNum}
+	</update>	
+	
+	<update id="updateReversionInfo" parameterType="hashmap">
+		UPDATE TB_S002
+		SET VER_CONT_TYPE = #{verContType}
+			, REPOS_URL = #{reposUrl}
+			, VER_CONT_PORT = #{verContPort}
+			, VER_CONT_USER_ID = #{verContUserId}
+			, VER_CONT_PWD = #{verContPwd}
+			, DEPO_PATH = #{depoPath}
+		WHERE S_NUM = #{sNum}
+	</update>
+	
+	<update id="updateCISeverInit" parameterType="hashmap">
+		UPDATE TB_S001
+		SET INIT_YN='Y'
+		WHERE S_NUM = #{sNum}
+	</update>
+</mapper>

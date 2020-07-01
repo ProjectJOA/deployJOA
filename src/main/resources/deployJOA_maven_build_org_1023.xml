@@ -1,0 +1,48 @@
+<?xml version="1.0"?>
+<project basedir="." name="DeployJOA" default="makeVersionDeploy">
+  
+	<property name="srcdir" value="${deploy.basedir}/project_init/src"/>
+	<property name="initBuilddir" value="${deploy.basedir}/project_init/target/classes"/>
+	<property name="initJar" value="${deploy.basedir}/project_init/${deploy.init_jarfile}.jar"/>
+	<property name="webroot" value="src/main/webapp"/> <!-- source webroot path --> 
+	
+	<target name="deploy">
+		<echo message="deploy to ${deploy.webroot}/${deploy.deployno}" />
+		<copy todir="${deploy.webroot}/${deploy.deployno}" overwrite="true">
+			<fileset dir="${deploy.basedir}/deploy/buildsrc/${deploy.deployno}/${webroot}">
+				<include name="**/*" />
+			</fileset>
+		</copy>	
+		<copy todir="${deploy.webroot}/${deploy.deployno}/WEB-INF/classes" overwrite="true">
+			<fileset dir="${deploy.basedir}/deploy/build/${deploy.deployno}/classes">
+				<include name="/**" />
+			</fileset>				
+		</copy>
+	</target>
+
+	<target name="copy_to_init" depends="deploy">
+		<echo message="copy_to_init" />
+		<copy todir="${deploy.basedir}/project_init/target/classes" overwrite="true">
+			<fileset dir="${deploy.basedir}/deploy/build/${deploy.deployno}/classes">
+				<include name="/**" />
+			</fileset>
+		</copy>			
+	</target>
+	
+	<target name="make_jar_init">
+			<echo message="delete init jar file" />
+			<delete file="${initJar}" />
+			<echo message="make init jar file" />
+			<jar jarfile="${initJar}" basedir="${initBuilddir}" />
+	</target>
+
+	<target name="make_jar_deploy_file">
+			<echo message="delete init jar file" />
+			<delete file="${deploy.webroot}/DeployJOA_files_${deploy.deployno}.zip" />
+			<echo message="make deploy file" />
+			<zip destfile="${deploy.webroot}/DeployJOA_files_${deploy.deployno}.zip" basedir="${deploy.webroot}/${deploy.deployno}" />
+	</target>
+	
+	<target name="makeVersionDeploy" depends="deploy,copy_to_init,make_jar_init,make_jar_deploy_file" />
+	
+</project>

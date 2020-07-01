@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:jdbc="http://www.springframework.org/schema/jdbc"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+        http://www.springframework.org/schema/jdbc  http://www.springframework.org/schema/jdbc/spring-jdbc-4.0.xsd">
+	
+	<bean id="propertyConfigurer" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+        <property name="locations">
+            <list>
+                <value>classpath:/config/props/globals.properties</value>
+                <value>classpath:/config/props/hsqldb.properties</value>                
+            </list>
+        </property>
+    </bean>
+    
+     <!-- HSQLDB STARTER -->
+     <bean id="hsqldb" class="kr.co.projectJOA.com.hsqldb.HSQLDB" init-method="start">
+          <constructor-arg>
+               <value>
+               server.database.0 = file:${Globals.hsqldb.file}
+               server.dbname.0 = deployjoa
+               server.remote_open = true
+               server.port = ${Globals.hsqldb.port}
+               hsqldb.reconfig_logging = false
+               </value>
+          </constructor-arg>
+     </bean>
+     
+      <bean id="dataSource-hsql" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+          <property name="driverClassName" value="org.hsqldb.jdbcDriver" />
+          <property name="url" value="jdbc:hsqldb:hsql://localhost:${Globals.hsqldb.port}/deployjoa" />
+          <property name="username" value="sa" />
+          <property name="password" value="" />
+     </bean>
+
+     <!-- CREATE TABLE -->
+<!--      <jdbc:initialize-database data-source="dataSource-hsql" ignore-failures="DROPS">
+     	<jdbc:script location="classpath:/db/deployjoa_db.sql" />
+     </jdbc:initialize-database> -->
+
+     		
+    <bean id="dataSource" class="net.sf.log4jdbc.Log4jdbcProxyDataSource">
+        <constructor-arg ref="dataSource-hsql" />
+        <property name="logFormatter">
+            <bean class="net.sf.log4jdbc.tools.Log4JdbcCustomFormatter">
+                <property name="loggingType" value="MULTI_LINE" />
+                <property name="sqlPrefix" value="SQL         :  "/>
+            </bean>
+        </property>
+    </bean>    
+</beans>

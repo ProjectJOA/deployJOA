@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<project basedir="." name="DeployJOA" default="makeNonJavaZip">
+  
+	  <!-- system setting : Don't change setting.-->
+	<import file="${deploy.buildRefFilePath}" />
+	
+	<target name="make_jar_deploy_file">
+			<echo message="make deploy file" />
+			<zip destfile="${deploy.webroot}/DeployJOA_files_${deploy.deployno}.zip" basedir="${deploy.basedir}/deploy/buildsrc/${deploy.deployno}" />
+	</target>
+	
+	<target name="makeNonJavaZip" depends="make_jar_deploy_file" />
+	
+</project>
