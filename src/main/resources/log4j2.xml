@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration>
+    <Appenders>
+        <Console name="console" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d %5p [%c] %m%n" />
+        </Console>
+	    <File name="deployLog" fileName="${sys:logFilename}">
+	        <PatternLayout pattern="[%d] %m%n"/>
+	    </File>        
+    </Appenders>
+    <Loggers>
+         <Logger name="kr.co.projectJOA.com" level="DEBUG" additivity="false">
+            <AppenderRef ref="console" />
+            <AppenderRef ref="deployLog" />
+        </Logger>        
+        <Logger name="kr.co.projectJOA.svn" level="DEBUG" additivity="false">
+            <AppenderRef ref="console" />
+            <AppenderRef ref="deployLog" />
+        </Logger>
+         <Logger name="kr.co.projectJOA.com.zdeployJOA" level="DEBUG" additivity="false">
+            <AppenderRef ref="deployLog" />
+            <AppenderRef ref="console" />
+        </Logger>        
+        
+        <Root level="ERROR">
+            <AppenderRef ref="console" />
+        </Root>
+    </Loggers>
+</Configuration>

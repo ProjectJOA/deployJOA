@@ -1,0 +1,7 @@
+<settings>
+  <localRepository>D:/exports/maven/repository</localRepository>
+  <offline>false</offline>
+  <pluginGroups>
+    <pluginGroup>www.projectJOA.co.kr</pluginGroup>
+  </pluginGroups>
+</settings>

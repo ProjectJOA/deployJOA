@@ -1,0 +1,103 @@
+<?xml version="1.0"?>
+<project basedir="." name="DeployJOA" default="makeVersionDeploy">
+  
+	  <!-- system setting : Don't change setting.-->
+	<import file="${deploy.buildRefFilePath}" />
+	
+	  <property name="debuglevel" value="source,lines,vars"/>  
+	  <property name="builddir" value="${deploy.basedir}/deploy/build/${deploy.deployno}/classes"/>  
+	  
+	<property name="initBuilddir" value="${deploy.basedir}/project_init/target/classes"/>
+	<property name="initJar" value="${deploy.basedir}/project_init/${deploy.init_jarfile}.jar"/>
+
+	<!-- 1023 add -->
+	  <path id="java.lib.classpath">
+	     <fileset dir="${java_home.dir}/lib">
+	         <include name="*.jar" />
+	     </fileset>    	
+	  </path>
+	  <path id="webapp.lib.classpath">
+	      <fileset dir="${webapp.dir}/lib">
+	             <include name="*.jar" />
+	      </fileset>
+	  </path>
+	  <path id="web.lib.classpath">
+	      	<fileset dir="${deploy.basedir}/project_init/target/${deploy.war_path}/WEB-INF/lib">
+	             <include name="*.jar" />
+	      </fileset>
+	  </path>
+	  <path id="project.classpath">
+	    <pathelement location="${deploy.basedir}/project_init/target/classes"/>
+	  	<path refid="java.lib.classpath"/>
+	  	<path refid="webapp.lib.classpath"/>
+	     <path refid="web.lib.classpath"/>
+	  </path>
+	
+	  <target name="build-version">
+	      <echo message="[DeployJOA] source compile start ++++++++++"/>      
+	      <mkdir dir="${builddir}"/>      
+	      <javac debug="true" fork="yes" debuglevel="${debuglevel}" destdir="${builddir}" includeantruntime="false" source="${source}" target="${target}" encoding="${encode_type}">
+	          <src path="${deploy.basedir}/deploy/buildsrc/${deploy.deployno}"/>
+	          <classpath refid="project.classpath"/>
+	      </javac>
+	  </target>
+	
+	<!-- 1023 add -->
+	     	
+	<!-- target name="deploy" --> 
+	<target name="deploy" depends="build-version">		
+		<echo message="deploy to ${deploy.webroot}/${deploy.deployno}" />
+		<copy todir="${deploy.webroot}/${deploy.deployno}" overwrite="true">
+			<fileset dir="${deploy.basedir}/deploy/buildsrc/${deploy.deployno}/${webroot}">
+				<include name="**/*" />
+			</fileset>
+		</copy>	
+		<copy todir="${deploy.webroot}/${deploy.deployno}/WEB-INF/classes" overwrite="true">
+			<fileset dir="${builddir}">
+				<include name="**/*" />
+			</fileset>				
+		</copy>
+	</target>
+
+	<!-- 1023 add -->
+	  <target name="dir.check">
+	      <condition property="dir.exists">
+	          <available file="${deploy.basedir}/deploy/buildsrc/${deploy.deployno}/${resources_srcdir}" type="dir" />
+	      </condition>
+	  </target>
+
+		<target name="deploy_resources" depends="build-version" if="dir.exists">
+	    <copy todir="${deploy.webroot}/${deploy.deployno}/WEB-INF/classes" overwrite="true">
+				<fileset dir="${deploy.basedir}/deploy/buildsrc/${deploy.deployno}/${resources_srcdir}">
+					<include name="**/*" />
+				</fileset>				
+			</copy>	
+		</target>
+	<!-- 1023 add -->
+	
+	<target name="copy_to_init" depends="deploy">
+		<echo message="copy_to_init" />
+		<copy todir="${deploy.basedir}/project_init/target/classes" overwrite="true">
+			<fileset dir="${deploy.basedir}/deploy/build/${deploy.deployno}/classes">
+				<include name="/**" />
+			</fileset>
+		</copy>			
+	</target>
+	
+	<target name="make_jar_init">
+			<echo message="delete init jar file" />
+			<delete file="${initJar}" />
+			<echo message="make init jar file" />
+			<jar jarfile="${initJar}" basedir="${initBuilddir}" />
+	</target>
+
+	<target name="make_jar_deploy_file">
+			<echo message="delete init jar file" />
+			<delete file="${deploy.webroot}/DeployJOA_files_${deploy.deployno}.zip" />
+			<echo message="make deploy file" />
+			<zip destfile="${deploy.webroot}/DeployJOA_files_${deploy.deployno}.zip" basedir="${deploy.webroot}/${deploy.deployno}" />
+	</target>
+	
+	<target name="makeVersionDeploy" depends="build-version,deploy,copy_to_init,make_jar_init,make_jar_deploy_file,dir.check,deploy_resources" />
+	
+</project>

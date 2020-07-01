@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="systemConfigDAO">
+
+	<!-- patch system -->
+	<select id="getPatchVerCount" parameterType="hashmap" resultType="int">
+		SELECT COUNT(*)
+		FROM TB_C002
+		WHERE S_VER_NO = #{sVerNo}
+	</select>
+	
+	<select id="isCheckPatchProcess" parameterType="hashmap" resultType="int">
+		SELECT COUNT(*)
+		FROM   INFORMATION_SCHEMA.TABLES 
+		WHERE TABLE_TYPE = 'BASE TABLE' 
+			AND TABLE_NAME='TB_C002'	
+	</select>
+	
+	<update id="createPatchTable" parameterType="hashmap" statementType="CALLABLE">
+	<![CDATA[
+		CREATE TABLE TB_C002(S_VER_NO VARCHAR(20) NOT NULL, 
+		  PATCHED_CONT VARCHAR(2000) NULL, 
+		  PATCHED_YN VARCHAR(1) NULL, 
+		  PATCHED_TIME VARCHAR(14) NULL,
+		  PRIMARY KEY (S_VER_NO) );
+	]]>		
+	</update>	
+	
+	<insert id="createPatch" parameterType="map">
+		INSERT INTO TB_C002(S_VER_NO, PATCHED_CONT, PATCHED_YN, PATCHED_TIME)
+		VALUES(#{sVerNo},#{patchedCont},#{patchedYn},
+			<choose>
+				<when test="patchedYn == 'Y'.toString()">TO_CHAR(SYSDATE,'YYYYMMDDHH24MISS')</when>
+				<otherwise>''</otherwise>
+			</choose>
+		)
+	</insert>
+	
+	<select id="getPatchHist" parameterType="hashmap" resultType="resultmap">
+		SELECT S_VER_NO, PATCHED_CONT, PATCHED_YN, PATCHED_TIME
+		FROM TB_C002
+		ORDER BY S_VER_NO DESC
+	</select>
+		
+	<select id="getPatchHistCount" parameterType="hashmap" resultType="int">
+		SELECT count(*)
+		FROM TB_C002
+		WHERE PATCHED_YN = 'N'
+	</select>
+	
+<!-- 	<update id="patched_ver_beta-0-1-0" parameterType="hashmap" statementType="CALLABLE">
+	<![CDATA[
+		CREATE TABLE TB_C002(S_VER_NO VARCHAR(20) NOT NULL, 
+		  PATCHED_CONT VARCHAR(2000) NULL, 
+		  PATCHED_YN VARCHAR(1) NULL, 
+		  PATCHED_TIME VARCHAR(14) NULL);
+	]]>		
+	</update>
+ -->	
+	
+	<update id="updatePatchedYN" parameterType="hashmap">
+		UPDATE TB_C002
+		SET PATCHED_YN = 'Y'
+			,PATCHED_TIME = TO_CHAR(SYSDATE,'YYYYMMDDHH24MISS')
+		WHERE S_VER_NO = #{sVerNo}
+	</update>
+	
+	<update id="patched_ver_beta-0-1-5" parameterType="hashmap">
+		ALTER TABLE TB_B001 ADD DEPO_TYPE VARCHAR(1) NULL
+	</update>
+</mapper>
