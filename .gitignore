@@ -1,1 +1,6 @@
 /target/
+/.settings/
+.classpath
+.project
+/src/main/resources/db/deployjoa_db.sql.lck
+/src/main/resources/db/deployjoa_db.sql.log
